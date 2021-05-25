@@ -21,15 +21,17 @@ A plugin for TShock that allows admins to block certain NPCs from spawning in th
 - `/unblocknpc <NPC name or ID>`
 - `.banmob Zombie 5` - Allows Zombies to spawn in the world only 5 times, and will silently send a message
 - `/unbanmob king slime` - Tells all players on the server you unbanned King Slime from spawning
+- `/npc-reload` - Reloads the config
 
 ### Config Options
-- `NPCAddedMessageSlient`: The message to send to a player silently when an NPC is banned
-- `NPCAddedMessage`: The message to send to all players when an NPC is banned
-- `NPCRemovedMessageSilent`: The message to send to a player silently when an NPC is unbanned
-- `NPCRemovedMessage`: The message to send to all players when an NPC is unbanned
-- `BlockBanMessageToOthers`: Whether or not to send a message silently regardless of the command specifier
+- `NPCAddedMessageSlient` - The message to send to a player silently when an NPC is banned
+- `NPCAddedMessage` - The message to send to all players when an NPC is banned
+- `NPCRemovedMessageSilent` - The message to send to a player silently when an NPC is unbanned
+- `NPCRemovedMessage` - The message to send to all players when an NPC is unbanned
+- `BlockBanMessageToOthers`- Whether or not to send a message silently regardless of the command specifier
 
 *To reset the database, delete `npc_blocker.sqlite` in the `tshock` folder
+**All commands require the `plugin.npc.blocker` permission
 
 ## Known Issues and Workarounds
 - Banning a segmented enemy (like worm types) is kind of glitchy, if you ban a body part of their segment, they will still spawn but die almost instantly afterwards, banning the head part prevents the spawn completely. 
