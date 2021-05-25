@@ -32,10 +32,12 @@ namespace NPCBlocker
     public class NPCBlocker : TerrariaPlugin
     {
         private IDbConnection db;
-        private List<int> blockedNPC = new List<int>();
+        private Dictionary<int, int> blockedNPC = new Dictionary<int, int>();
+        public static Config ConfigFile = new Config();
+
         public override Version Version
         {
-            get { return new Version(2, 0); }
+            get { return new Version(2, 1); }
         }
 
         public override string Name
@@ -45,7 +47,7 @@ namespace NPCBlocker
 
         public override string Author
         {
-            get { return "Olink, updated by moisterrific"; }
+            get { return "Olink, updated by moisterrific + Moneylover3246"; }
         }
 
         public override string Description
@@ -65,9 +67,11 @@ namespace NPCBlocker
             Commands.ChatCommands.Add(new Command("plugin.npc.blocker", AddNpc, "blocknpc", "bannpc", "banmob"));
             //Commands.ChatCommands.Add(new Command("resnpc", DelNpc, "whitenpc", "unblocknpc", "unbannpc"));
             Commands.ChatCommands.Add(new Command("plugin.npc.blocker", DelNpc, "unblocknpc", "unbannpc", "unbanmob"));
+            Commands.ChatCommands.Add(new Command("plugin.npc.blocker", Reload, "npc-reload"));
             ServerApi.Hooks.NpcSpawn.Register(this, OnSpawn);
             ServerApi.Hooks.NpcTransform.Register(this, OnTransform);
             StartDB();
+            ConfigFile = Config.Read(Path.Combine(TShock.SavePath, "NPCBlocker.json"));
         }
 
         public void StartDB()
@@ -115,7 +119,8 @@ namespace NPCBlocker
             }
 
             var table2 = new SqlTable("Blocked_NPC",
-                                     new SqlColumn("ID", MySqlDbType.Int32)
+                                     new SqlColumn("ID", MySqlDbType.Int32),
+                                     new SqlColumn("AmounttoSpawn", MySqlDbType.Int32)
                 );
             var creator2 = new SqlTableCreator(db,
                                               db.GetSqlType() == SqlType.Sqlite
@@ -134,8 +139,15 @@ namespace NPCBlocker
 
             while (reader.Read())
             {
-                blockedNPC.Add(reader.Get<int>("ID"));
+                int id = reader.Get<int>("ID");
+                int amount = reader.Get<int>("AmounttoSpawn");
+                blockedNPC.Add(id, amount);
             }
+        }
+
+        private void Reload(CommandArgs args)
+        {
+            ConfigFile = Config.Read(Path.Combine(TShock.SavePath, "NPCBlocker.json"));
         }
 
         private void AddNpc(CommandArgs args)
@@ -169,7 +181,7 @@ namespace NPCBlocker
 
             if (args.Parameters.Count < 1)
             {
-                args.Player.SendErrorMessage("Invalid syntax! [c/ffff00:Proper syntax: {0}bannpc <name or ID>]", TShock.Config.Settings.CommandSpecifier);
+                args.Player.SendErrorMessage("Invalid syntax! [c/ffff00:Proper syntax: {0}bannpc <name or ID> <amount (default 0)>]", TShock.Config.Settings.CommandSpecifier);
                 return;
             }
             if (args.Parameters[0].Length == 0)
@@ -213,20 +225,35 @@ namespace NPCBlocker
                 //    blockedNPC.Add(id);
                 //}
 
-                if ((db.Query(query, id) != 0) && blockedNPC.Contains(id))
+                if ((db.Query(query, id) != 0) && blockedNPC.ContainsKey(id) && args.Parameters.Count == 1)
                 {
                     args.Player.SendErrorMessage("{0} (ID: {1}) is already banned.", npc.FullName, npc.type);
                 }
                 else
                 {
-                    blockedNPC.Add(id);
-                    if (args.Silent)
+                    int amountToSpawn = 0;
+                    if (args.Parameters.Count > 1 && int.TryParse(args.Parameters[1], out amountToSpawn))
                     {
-                        args.Player.SendSuccessMessage("Banned {0} (ID: {1}). [c/ffff00:This message is only visible to you.]", npc.FullName, npc.type);
+                        if (amountToSpawn < 0)
+                        {
+                            args.Player.SendErrorMessage("The amount of NPC's to ban must be greater than or equal to 0");
+                            return;
+                        }
+                        db.Query("INSERT INTO Blocked_NPC(AmounttoSpawn) VALUES(@0);", amountToSpawn);
+                        blockedNPC.Add(id, amountToSpawn);
+                    }
+                    else
+                    {
+                        db.Query("INSERT INTO Blocked_NPC(AmounttoSpawn) VALUES(@0);", 0);
+                        blockedNPC.Add(id, 0);
+                    }
+                    if (args.Silent || ConfigFile.BlockBanMessageToOthers)
+                    {
+                        args.Player.SendSuccessMessage(ConfigFile.NPCAddedMessageSilent, npc.FullName, npc.type);
                     } 
                     else
                     {
-                        TSPlayer.All.SendInfoMessage("{0} has banned {1} from spawning.", args.Player.Name, npc.FullName);
+                        TSPlayer.All.SendInfoMessage(ConfigFile.NPCAddedMessage, args.Player.Name, npc.FullName, amountToSpawn);
                     }
                 }
             }
@@ -312,11 +339,11 @@ namespace NPCBlocker
                     blockedNPC.Remove(id);
                     if (args.Silent)
                     {
-                        args.Player.SendSuccessMessage("Unbanned {0} (ID: {1}). [c/ffff00:This message is only visible to you.]", npc.FullName, npc.type);
+                        args.Player.SendSuccessMessage(ConfigFile.NPCRemovedMessageSilent, npc.FullName, npc.type);
                     }
                     else
                     {
-                        TSPlayer.All.SendInfoMessage("{0} has unbanned {1} from spawning.", args.Player.Name, npc.FullName);
+                        TSPlayer.All.SendInfoMessage(ConfigFile.NPCRemovedMessage, args.Player.Name, npc.FullName);
                     }
                 }
             }
@@ -336,8 +363,18 @@ namespace NPCBlocker
         {
             if (args.Handled)
                 return;
-            if (blockedNPC.Contains(Main.npc[args.NpcId].netID))
+            int npcNetID = Main.npc[args.NpcId].netID;
+            if (blockedNPC.ContainsKey(npcNetID))
             {
+                int foundNPCCount;
+                if (blockedNPC.TryGetValue(npcNetID, out foundNPCCount))
+                {
+                    if (CheckActiveNPCCount(npcNetID) > foundNPCCount)
+                    {
+                        Main.npc[args.NpcId].active = false;
+                    }
+                    return;
+                }
                 Main.npc[args.NpcId].active = false;
             }
         }
@@ -346,13 +383,33 @@ namespace NPCBlocker
         {
             if (args.Handled)
                 return;
-            if (blockedNPC.Contains(Main.npc[args.NpcId].netID))
+            int npcNetID = Main.npc[args.NpcId].netID;
+            if (blockedNPC.ContainsKey(npcNetID))
             {
+                int foundNPCCount;
+                if (blockedNPC.TryGetValue(npcNetID, out foundNPCCount))
+                {
+                    if (CheckActiveNPCCount(npcNetID) > foundNPCCount)
+                    {
+                        args.Handled = true;
+                        Main.npc[args.NpcId].active = false;
+                        args.NpcId = Main.maxNPCs;
+                    }
+                    return;
+                }
                 args.Handled = true;
                 Main.npc[args.NpcId].active = false;
-                //args.NpcId = 200;
                 args.NpcId = Main.maxNPCs;
             }
+        }
+
+        public static int CheckActiveNPCCount(NPC npc)
+        {
+            return Main.npc.Where(Npc => Npc != null && Npc.active && Npc.type == npc.type).Count();
+        }
+        public static int CheckActiveNPCCount(int type)
+        {
+            return Main.npc.Where(Npc => Npc != null && Npc.active && Npc.type == type).Count();
         }
     }
 }
