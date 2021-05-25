@@ -30,8 +30,9 @@ A plugin for TShock that allows admins to block certain NPCs from spawning in th
 - `NPCRemovedMessage` - The message to send to all players when an NPC is unbanned
 - `BlockBanMessageToOthers`- Whether or not to send a message silently regardless of the command specifier
 
-*To reset the database, delete `npc_blocker.sqlite` in the `tshock` folder
-**All commands require the `plugin.npc.blocker` permission
+### Important
+- To reset the database, delete `npc_blocker.sqlite` in the `tshock` folder
+- All commands require the `plugin.npc.blocker` permission
 
 ## Known Issues and Workarounds
 - Banning a segmented enemy (like worm types) is kind of glitchy, if you ban a body part of their segment, they will still spawn but die almost instantly afterwards, banning the head part prevents the spawn completely. 
