@@ -239,7 +239,6 @@ namespace NPCBlocker
                             args.Player.SendErrorMessage("The amount of NPC's to ban must be greater than or equal to 0");
                             return;
                         }
-                        // Fix database insert
                         db.Query("INSERT INTO Blocked_NPC(AmounttoSpawn) VALUES(@0);", amountToSpawn);
                         blockedNPC.Add(id, amountToSpawn);
                     }
