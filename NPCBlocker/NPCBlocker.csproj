@@ -53,22 +53,22 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="BCrypt.Net">
-      <HintPath>..\..\..\..\Documents\TShock\TShock_4.5.3_Terraria_1.4.2.3\BCrypt.Net.dll</HintPath>
+      <HintPath>..\References\BCrypt.Net.dll</HintPath>
     </Reference>
     <Reference Include="HttpServer">
-      <HintPath>..\..\..\..\Documents\TShock\TShock_4.5.3_Terraria_1.4.2.3\HttpServer.dll</HintPath>
+      <HintPath>..\References\HttpServer.dll</HintPath>
     </Reference>
     <Reference Include="Mono.Data.Sqlite">
-      <HintPath>..\..\..\..\Documents\TShock\TShock_4.5.3_Terraria_1.4.2.3\Mono.Data.Sqlite.dll</HintPath>
+      <HintPath>..\References\Mono.Data.Sqlite.dll</HintPath>
     </Reference>
     <Reference Include="MySql.Data">
-      <HintPath>..\..\..\..\Documents\TShock\TShock_4.5.3_Terraria_1.4.2.3\MySql.Data.dll</HintPath>
+      <HintPath>..\References\MySql.Data.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\..\..\..\Documents\TShock\TShock_4.5.3_Terraria_1.4.2.3\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="OTAPI">
-      <HintPath>..\..\..\..\Documents\TShock\TShock_4.5.3_Terraria_1.4.2.3\OTAPI.dll</HintPath>
+      <HintPath>..\References\OTAPI.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -78,13 +78,14 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="TerrariaServer">
-      <HintPath>..\..\..\..\Documents\TShock\TShock_4.5.3_Terraria_1.4.2.3\TerrariaServer.exe</HintPath>
+      <HintPath>..\References\TerrariaServer.exe</HintPath>
     </Reference>
     <Reference Include="TShockAPI">
-      <HintPath>..\..\..\..\Documents\TShock\TShock_4.5.3_Terraria_1.4.2.3\ServerPlugins\TShockAPI.dll</HintPath>
+      <HintPath>..\References\TShockAPI.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Config.cs" />
     <Compile Include="NPCBlocker.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
